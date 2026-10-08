@@ -1,47 +1,18 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hot Open Models</title>
+{% extends "base.html.j2" %}
+{% block style %}
 <style>
-  :root {
-    --bg: #fbfbf9; --fg: #1d1d1b; --muted: #6b6b66; --line: #e4e3de;
-    --row: #f3f2ee; --accent: #2f5bd3;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg: #161615; --fg: #ecebe6; --muted: #9a9993; --line: #2c2c2a; --row: #1f1f1d; --accent: #8aa8ff; }
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.45 system-ui, sans-serif; }
-  main { max-width: 1200px; margin: 0 auto; padding: 32px 16px 64px; }
-  h1 { margin: 0 0 4px; font-size: 26px; }
-  .sub { color: var(--muted); margin: 0 0 24px; }
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
-  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-  th, td { padding: 8px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
-  th:nth-child(-n+2), td:nth-child(-n+2), th:nth-child(5), td:nth-child(5) { text-align: left; }
-  th { position: sticky; top: 0; background: var(--bg); font-weight: 600; cursor: pointer; user-select: none; }
-  th[aria-sort="descending"]::after { content: " ↓"; }
-  th[aria-sort="ascending"]::after { content: " ↑"; }
-  tbody tr:hover { background: var(--row); }
-  tbody tr:last-child td { border-bottom: 0; }
-  .id { display: block; color: var(--muted); font-size: 12px; }
-  .rank { color: var(--muted); }
-  footer { color: var(--muted); font-size: 13px; margin-top: 16px; }
+  #models :is(th, td):is(:nth-child(-n+2), :nth-child(5)) { text-align: left; }
 </style>
-</head>
-<body>
-<main>
+{% endblock %}
+{% block title %}Hot Open Models{% endblock %}
+{% block content %}
   <h1>Hot Open Models</h1>
   <p class="sub">
     Open-weight models served on OpenRouter and released in the last {{ days }} days,
     ranked by Hugging Face trending score. Click a column to re-sort.
   </p>
   <div class="wrap">
-    <table>
+    <table id="models">
       <thead>
         <tr>
           <th data-type="num">#</th>
@@ -81,22 +52,4 @@
     Generated {{ generated.strftime("%Y-%m-%d %H:%M UTC") }} from the OpenRouter and Hugging Face APIs ·
     <a href="models.json">models.json</a>
   </footer>
-</main>
-<script>
-  // client-side sort; missing values are encoded as -1 so they sink when sorting descending
-  document.querySelectorAll("th").forEach((th, col) => th.addEventListener("click", () => {
-    const desc = th.getAttribute("aria-sort") !== "descending";
-    const num = th.dataset.type === "num";
-    const key = tr => tr.children[col].dataset.v;
-    const tbody = th.closest("table").tBodies[0];
-    const rows = [...tbody.rows].sort((a, b) => {
-      const d = num ? key(a) - key(b) : key(a).localeCompare(key(b));
-      return desc ? -d : d;
-    });
-    document.querySelectorAll("th").forEach(h => h.removeAttribute("aria-sort"));
-    th.setAttribute("aria-sort", desc ? "descending" : "ascending");
-    tbody.append(...rows);
-  }));
-</script>
-</body>
-</html>
+{% endblock %}

@@ -8,7 +8,7 @@ from typer.testing import CliRunner
 
 from top_evals import cli, hf, openrouter
 from top_evals.models import Model
-from top_evals.render import compact, render
+from top_evals.render import compact, render_models
 
 from .conftest import handler
 
@@ -49,7 +49,7 @@ def test_compact(n: float | None, want: str) -> None:
 
 
 def test_render_escapes_and_formats() -> None:
-    html = render([model(name="<script>x</script>")], generated=NOW, days=30)
+    html = render_models([model(name="<script>x</script>")], generated=NOW, days=30)
     assert "&lt;script&gt;x&lt;/script&gt;" in html
     assert "<script>x</script>" not in html
     assert "1.2M" in html and "27B" in html
@@ -70,3 +70,34 @@ def test_build_writes_site(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     assert [m["hf_id"] for m in json.loads((tmp_path / "models.json").read_text())] == [
         "acme/Small"
     ]
+
+
+def test_evals_writes_page(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    card = "## Evaluation\n| Benchmark | X |\n|-|-|\n| HLE | 1 |\n| <b>GPQA</b> | 2 |\n"
+    listed = [
+        {"hf_id": "acme/Small", "name": "Small"},
+        {"hf_id": "acme/Gone", "name": "Gone"},
+    ]
+    (tmp_path / "models.json").write_text(json.dumps(listed))
+
+    def cards(req: httpx.Request) -> httpx.Response:
+        if req.url.path.startswith("/acme/Small/"):
+            return httpx.Response(200, text=card)
+        return httpx.Response(404)
+
+    monkeypatch.setattr(
+        hf, "client", lambda: httpx.Client(transport=httpx.MockTransport(cards))
+    )
+
+    res = CliRunner().invoke(
+        cli.app, ["evals", "--site", str(tmp_path), "--min-models", "1"]
+    )
+
+    assert res.exit_code == 0, res.output
+    html = (tmp_path / "evals.html").read_text()
+    assert (
+        "HLE" in html
+        and "GPQA" in html
+        and 'href="https://huggingface.co/acme/Gone"' in html
+    )
+    assert json.loads((tmp_path / "evals.json").read_text())["missing"] == ["acme/Gone"]
