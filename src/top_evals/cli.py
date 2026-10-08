@@ -6,9 +6,8 @@ from pathlib import Path
 
 import typer
 
-from top_evals import hf, openrouter
-from top_evals.models import collect
-from top_evals.render import render
+from top_evals import evals, hf, models, openrouter
+from top_evals.render import render_evals, render_models
 
 app = typer.Typer(no_args_is_help=True)
 
@@ -29,11 +28,32 @@ def build(
     """Fetch hot open-weight models and write the static site."""
     now = datetime.now(UTC)
     with openrouter.client() as or_client, hf.client() as hf_client:
-        models = collect(now - timedelta(days=days), or_client, hf_client)[:limit]
+        found = models.collect(now - timedelta(days=days), or_client, hf_client)[:limit]
 
     out.mkdir(parents=True, exist_ok=True)
-    (out / "index.html").write_text(render(models, generated=now, days=days))
-    (out / "models.json").write_text(
-        json.dumps([m.to_dict() for m in models], indent=2)
+    (out / "index.html").write_text(render_models(found, generated=now, days=days))
+    (out / "models.json").write_text(json.dumps([m.to_dict() for m in found], indent=2))
+    typer.echo(f"wrote {len(found)} models to {out}")
+
+
+@app.command("evals")
+def evals_cmd(
+    site: Path = typer.Option(
+        Path("site"), help="Site directory containing models.json."
+    ),
+    min_models: int = typer.Option(
+        2, help="Only show evals reported by at least N models."
+    ),
+) -> None:
+    """Find which evals the listed models' cards report and write the evals page."""
+    listed = json.loads((site / "models.json").read_text())
+    with hf.client() as client:
+        report = evals.collect([m["hf_id"] for m in listed], client)
+
+    names = {m["hf_id"]: m["name"] for m in listed}
+    now = datetime.now(UTC)
+    (site / "evals.html").write_text(render_evals(report, names, now, min_models))
+    (site / "evals.json").write_text(json.dumps(report.to_dict(), indent=2))
+    typer.echo(
+        f"wrote {len(report.evals)} evals from {len(listed)} model cards to {site}"
     )
-    typer.echo(f"wrote {len(models)} models to {out}")

@@ -1,11 +1,13 @@
 # Top Evals
 
-**Live page:** <https://belambert.github.io/top-evals/> ·
-[models.json](https://belambert.github.io/top-evals/models.json)
+**Live pages:** [models](https://belambert.github.io/top-evals/) ·
+[evals](https://belambert.github.io/top-evals/evals.html) ·
+[models.json](https://belambert.github.io/top-evals/models.json) ·
+[evals.json](https://belambert.github.io/top-evals/evals.json)
 
-Track the hottest open-weight models and, eventually, their evals. A daily
-GitHub Actions job builds a static page listing the models and publishes it
-to GitHub Pages.
+Track the hottest open-weight models and the evals they report. A daily
+GitHub Actions job builds two static pages, one listing the models and one
+ranking the evals their model cards use, and publishes them to GitHub Pages.
 
 ## How Models Are Chosen
 
@@ -25,14 +27,37 @@ to GitHub Pages.
 The page also shows the Artificial Analysis intelligence index and the
 cheapest output price, both taken from OpenRouter.
 
+## How Evals Are Counted
+
+For each listed model, `top-evals evals` downloads the Hugging Face model card
+and reads the benchmark tables in it, both Markdown and HTML.
+
+- **Which tables:** tables under a heading mentioning evaluation, benchmarks,
+  performance, or results, plus any table with a "Benchmark" or "Eval"
+  column. Spec tables (layers, parameters, ...) are skipped.
+- **Which names:** the label of each row with at least one score. Tables with
+  one row per model and one column per eval (a `Model` header) are read
+  from the header instead.
+- **Normalization:** names are merged across spelling variants, so
+  `Terminal-Bench 2.1 (Pass@1)` and `TerminalBench 2.1 (with terminus2)`
+  count as one eval. Tool settings, shot counts, and metrics are ignored,
+  but versions are kept, so Terminal-Bench 2.0 and 2.1 stay separate.
+- **Counting:** each model counts once per eval. That includes evals the card
+  reports only for comparison models, since the question is which evals the
+  card presents.
+
+Cards that publish results only as images can't be read. The evals page lists
+them separately.
+
 ## Usage
 
 Install dependencies and build the site into `site/`:
 
     uv sync
     uv run top-evals build
+    uv run top-evals evals
 
-Options:
+`build` options:
 
 | Option    | Default | Description                                     |
 |-----------|---------|-------------------------------------------------|
@@ -40,13 +65,23 @@ Options:
 | `--days`  | `365`   | Only include models created in the last N days. |
 | `--limit` | `50`    | Maximum number of models to list.               |
 
-The output is `index.html` plus `models.json` with the same data.
+`build` writes `index.html` plus `models.json` with the same data. `evals`
+reads `models.json` and writes `evals.html` plus `evals.json`, which also
+records the evals found on each card.
+
+`evals` options:
+
+| Option         | Default | Description                                    |
+|----------------|---------|------------------------------------------------|
+| `--site`       | `site`  | Site directory containing `models.json`.       |
+| `--min-models` | `2`     | Only show evals reported by at least N models. |
 
 Set `HF_TOKEN` to raise Hugging Face rate limits. It is optional.
 
 ## Deployment
 
-`.github/workflows/pages.yml` builds and deploys the site on pushes to `main`,
+`.github/workflows/pages.yml` runs `build` then `evals` and deploys the site
+on pushes to `main`,
 daily at 06:00 UTC, and on manual dispatch. To enable it, set
 **Settings → Pages → Source** to **GitHub Actions**. Optionally add an
 `HF_TOKEN` repository secret.

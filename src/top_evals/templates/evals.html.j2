@@ -1,0 +1,54 @@
+{% extends "base.html.j2" %}
+{% block style %}
+<style>
+  #evals :is(th, td):is(:nth-child(2), :nth-child(4)) { text-align: left; }
+  #evals td:nth-child(4) { white-space: normal; min-width: 320px; color: var(--muted); font-size: 13px; }
+  .bar { display: inline-block; height: 8px; border-radius: 4px; background: var(--accent); vertical-align: middle; margin-right: 8px; }
+  h2 { font-size: 18px; margin: 32px 0 8px; }
+  .missing { color: var(--muted); font-size: 14px; }
+</style>
+{% endblock %}
+{% block title %}Popular Evals{% endblock %}
+{% block content %}
+  <h1>Popular Evals</h1>
+  <p class="sub">
+    Evals reported in the Hugging Face model cards of the {{ n_models }} hot open models,
+    counted once per model, including scores the card lists for comparison models.
+    Showing evals reported by at least {{ min_models }} models.
+  </p>
+  <div class="wrap">
+    <table id="evals">
+      <thead>
+        <tr>
+          <th data-type="num">#</th>
+          <th data-type="str">Eval</th>
+          <th data-type="num" aria-sort="descending">Models</th>
+          <th data-type="str">Reported by</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for e in evals %}
+        <tr>
+          <td class="rank" data-v="{{ loop.index }}">{{ loop.index }}</td>
+          <td data-v="{{ e.name }}">{{ e.name }}</td>
+          <td data-v="{{ e.count }}">
+            <span class="bar" style="width: {{ (60 * e.count / max_count) | round(1) }}px"></span>{{ e.count }}
+          </td>
+          <td data-v="{{ e.models | join(' ') }}">{% for r in e.models %}{{ names.get(r, r) }}{{ ", " if not loop.last }}{% endfor %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if missing %}
+  <h2>Cards without readable eval tables</h2>
+  <p class="missing">
+    These cards report results only as images, or not at all, so they aren't counted:
+    {% for r in missing %}<a href="https://huggingface.co/{{ r }}">{{ names.get(r, r) }}</a>{{ ", " if not loop.last }}{% endfor %}.
+  </p>
+  {% endif %}
+  <footer>
+    Generated {{ generated.strftime("%Y-%m-%d %H:%M UTC") }} ·
+    <a href="evals.json">evals.json</a>
+  </footer>
+{% endblock %}
