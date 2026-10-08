@@ -8,3 +8,9 @@ wheels/
 
 # Virtual environments
 .venv
+
+# uv lock file
+uv.lock
+
+# Generated site
+site/

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hot Open Models</title>
+<style>
+  :root {
+    --bg: #fbfbf9; --fg: #1d1d1b; --muted: #6b6b66; --line: #e4e3de;
+    --row: #f3f2ee; --accent: #2f5bd3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #161615; --fg: #ecebe6; --muted: #9a9993; --line: #2c2c2a; --row: #1f1f1d; --accent: #8aa8ff; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.45 system-ui, sans-serif; }
+  main { max-width: 1200px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { margin: 0 0 4px; font-size: 26px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { padding: 8px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+  th:nth-child(-n+2), td:nth-child(-n+2), th:nth-child(5), td:nth-child(5) { text-align: left; }
+  th { position: sticky; top: 0; background: var(--bg); font-weight: 600; cursor: pointer; user-select: none; }
+  th[aria-sort="descending"]::after { content: " ↓"; }
+  th[aria-sort="ascending"]::after { content: " ↑"; }
+  tbody tr:hover { background: var(--row); }
+  tbody tr:last-child td { border-bottom: 0; }
+  .id { display: block; color: var(--muted); font-size: 12px; }
+  .rank { color: var(--muted); }
+  footer { color: var(--muted); font-size: 13px; margin-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Hot Open Models</h1>
+  <p class="sub">
+    Open-weight models served on OpenRouter and released in the last {{ days }} days,
+    ranked by Hugging Face trending score. Click a column to re-sort.
+  </p>
+  <div class="wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-type="num">#</th>
+          <th data-type="str">Model</th>
+          <th data-type="str">Released</th>
+          <th data-type="num">Params</th>
+          <th data-type="str">License</th>
+          <th data-type="num" aria-sort="descending">Trending</th>
+          <th data-type="num">Likes</th>
+          <th data-type="num" title="Last 30 days, base repo plus quantized derivatives">Downloads</th>
+          <th data-type="num" title="Artificial Analysis Intelligence Index">AA index</th>
+          <th data-type="num" title="Cheapest OpenRouter price, USD per 1M output tokens">$/M out</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for m in models %}
+        <tr>
+          <td class="rank" data-v="{{ loop.index }}">{{ loop.index }}</td>
+          <td data-v="{{ m.name }}">
+            <a href="https://huggingface.co/{{ m.hf_id }}">{{ m.name }}</a>
+            <span class="id">{{ m.hf_id }}</span>
+          </td>
+          <td data-v="{{ m.created.isoformat() }}">{{ m.created.strftime("%Y-%m-%d") }}</td>
+          <td data-v="{{ m.params or -1 }}">{{ m.params | compact }}</td>
+          <td data-v="{{ m.license or '' }}">{{ m.license or "–" }}</td>
+          <td data-v="{{ m.trending }}">{{ m.trending }}</td>
+          <td data-v="{{ m.likes }}">{{ m.likes | compact }}</td>
+          <td data-v="{{ m.total_downloads }}" title="base {{ m.downloads | compact }} · quantized {{ m.quant_downloads | compact }}">{{ m.total_downloads | compact }}</td>
+          <td data-v="{{ m.aa_index if m.aa_index is not none else -1 }}">{{ m.aa_index if m.aa_index is not none else "–" }}</td>
+          <td data-v="{{ m.price_out if m.price_out is not none else -1 }}">{{ "%.2f" | format(m.price_out) if m.price_out is not none else "–" }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <footer>
+    Generated {{ generated.strftime("%Y-%m-%d %H:%M UTC") }} from the OpenRouter and Hugging Face APIs ·
+    <a href="models.json">models.json</a>
+  </footer>
+</main>
+<script>
+  // client-side sort; missing values are encoded as -1 so they sink when sorting descending
+  document.querySelectorAll("th").forEach((th, col) => th.addEventListener("click", () => {
+    const desc = th.getAttribute("aria-sort") !== "descending";
+    const num = th.dataset.type === "num";
+    const key = tr => tr.children[col].dataset.v;
+    const tbody = th.closest("table").tBodies[0];
+    const rows = [...tbody.rows].sort((a, b) => {
+      const d = num ? key(a) - key(b) : key(a).localeCompare(key(b));
+      return desc ? -d : d;
+    });
+    document.querySelectorAll("th").forEach(h => h.removeAttribute("aria-sort"));
+    th.setAttribute("aria-sort", desc ? "descending" : "ascending");
+    tbody.append(...rows);
+  }));
+</script>
+</body>
+</html>
