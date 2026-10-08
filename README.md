@@ -1,5 +1,8 @@
 # Top Evals
 
+**Live page:** <https://belambert.github.io/top-evals/> ·
+[models.json](https://belambert.github.io/top-evals/models.json)
+
 Track the hottest open-weight models and, eventually, their evals. A daily
 GitHub Actions job builds a static page listing the models and publishes it
 to GitHub Pages.
