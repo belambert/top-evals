@@ -3,6 +3,7 @@
 <style>
   #evals :is(th, td):is(:nth-child(2), :nth-child(4)) { text-align: left; }
   #evals td:nth-child(4) { white-space: normal; min-width: 320px; color: var(--muted); font-size: 13px; }
+  #evals td:nth-child(4) a { color: inherit; }
   .bar { display: inline-block; height: 8px; border-radius: 4px; background: var(--accent); vertical-align: middle; margin-right: 8px; }
   h2 { font-size: 18px; margin: 32px 0 8px; }
   .missing { color: var(--muted); font-size: 14px; }
@@ -34,7 +35,7 @@
           <td data-v="{{ e.count }}">
             <span class="bar" style="width: {{ (60 * e.count / max_count) | round(1) }}px"></span>{{ e.count }}
           </td>
-          <td data-v="{{ e.models | join(' ') }}">{% for r in e.models %}{{ names.get(r, r) }}{{ ", " if not loop.last }}{% endfor %}</td>
+          <td data-v="{{ e.models | join(' ') }}">{% for r in e.models %}<a href="https://huggingface.co/{{ r }}">{{ names.get(r, r) }}</a>{{ ", " if not loop.last }}{% endfor %}</td>
         </tr>
       {% endfor %}
       </tbody>

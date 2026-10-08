@@ -95,9 +95,7 @@ def test_evals_writes_page(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 
     assert res.exit_code == 0, res.output
     html = (tmp_path / "evals.html").read_text()
-    assert (
-        "HLE" in html
-        and "GPQA" in html
-        and 'href="https://huggingface.co/acme/Gone"' in html
-    )
+    assert "HLE" in html and "GPQA" in html
+    assert '<a href="https://huggingface.co/acme/Small">Small</a>' in html
+    assert 'href="https://huggingface.co/acme/Gone"' in html
     assert json.loads((tmp_path / "evals.json").read_text())["missing"] == ["acme/Gone"]
