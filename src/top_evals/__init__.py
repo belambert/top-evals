@@ -1,2 +1,1 @@
-def hello() -> str:
-    return "Hello from top-evals!"
+"""Track the hottest open-weight models and their evals."""
