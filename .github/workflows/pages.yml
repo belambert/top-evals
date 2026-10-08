@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv sync
-      - run: uv run top-evals build --out site
+      - run: uv run top-evals build --out site && uv run top-evals evals --site site
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
       - uses: actions/upload-pages-artifact@v3
