@@ -70,7 +70,7 @@ def build(or_models: list[dict[str, Any]], info: dict[str, Any], quant: int) -> 
     aa = (main.get("benchmarks") or {}).get("artificial_analysis") or {}
     return Model(
         hf_id=info["id"],
-        name=main["name"].split(": ", 1)[-1],
+        name=main["name"].split(": ", 1)[-1].removesuffix(" (free)"),
         or_ids=sorted(m["id"] for m in or_models),
         created=created_at(info),
         likes=info.get("likes", 0),
